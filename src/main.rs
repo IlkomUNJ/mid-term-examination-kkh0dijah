@@ -62,6 +62,41 @@ fn test_binary_search_tree(){
     let main_tree_path = "bst_graph.dot";
     generate_dotfile_bst(&rootlink, main_tree_path);
 
+    //tes
+    fn test_binary_search_tree() {
+        let rootlink: BstNodeLink = BstNode::new_bst_nodelink(15);
+        rootlink.borrow_mut().add_left_child(&rootlink, 6);
+        rootlink.borrow_mut().add_right_child(&rootlink, 18);
+    
+        let left_subtree = &rootlink.borrow().left;
+        if let Some(left_tree_extract) = left_subtree {
+            left_tree_extract.borrow_mut().add_node(left_tree_extract, 3);
+        }
+    
+        if let Some(predecessor) = BstNode::tree_predecessor(&rootlink) {
+            println!(
+                "Predecessor of root node is: {:?}",
+                predecessor.borrow().key
+            );
+        } else {
+            println!("No predecessor found for root node.");
+        }
+    
+        if let Some(median_node) = rootlink.borrow().median() {
+            println!("Median of the tree is: {:?}", median_node.borrow().key);
+        } else {
+            println!("Tree is empty, no median found.");
+        }
+    
+        let rebalanced_tree = BstNode::tree_rebalance(&rootlink);
+        println!(
+            "Tree has been rebalanced. Root of the new tree is: {:?}",
+            rebalanced_tree.borrow().key
+        );
+    
+        generate_dotfile_bst(&rebalanced_tree, "rebalanced_bst.dot");
+    }
+
     //tree search test
     let search_keys = vec![15, 9, 22];
 

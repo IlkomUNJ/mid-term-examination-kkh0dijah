@@ -343,6 +343,100 @@ impl BstNode {
         return false;
     }
 
+    fn add_node(&self, target_node: Option<&BstNodeLink>, value: i32) -> bool {
+        if let Some(target_ref) = target_node {
+            let mut target = target_ref.borrow_mut();
+            let new_node = Rc::new(RefCell::new(BstNode {
+                key: Some(value),
+                left: None,
+                right: None,
+                parent: Some(Rc::downgrade(target_ref)),
+            }));
+    
+            if target.left.is_none() {
+                target.left = Some(Rc::clone(&new_node));
+                return true;
+            } else if target.right.is_none() {
+                target.right = Some(Rc::clone(&new_node));
+                return true;
+            }
+        }
+        false 
+
+    fn tree_predecessor(node: &BstNodeLink) -> Option<BstNodeLink> {
+        if let Some(left_node) = &node.borrow().left {
+            return Some(left_node.borrow().maximum());
+        }
+        let mut current = node.clone();
+        let mut parent = BstNode::upgrade_weak_to_strong(current.borrow().parent.clone());
+
+        while let Some(ref p) = parent {
+            if let Some(right) = &p.borrow().right {
+                if BstNode::is_node_match(right, &current) {
+                    return Some(p.clone());
+                }
+            }
+            current = p.clone();
+            parent = BstNode::upgrade_weak_to_strong(current.borrow().parent.clone());
+        }
+
+        None 
+    }
+
+    fn median(&self) -> Option<BstNodeLink> {
+        fn inorder_traversal(node: &Option<BstNodeLink>, nodes: &mut Vec<BstNodeLink>) {
+            if let Some(n) = node {
+                inorder_traversal(&n.borrow().left, nodes);
+                nodes.push(n.clone());
+                inorder_traversal(&n.borrow().right, nodes);
+            }
+        }
+
+        let mut nodes = Vec::new();
+        inorder_traversal(&Some(self.get_bst_nodelink_copy()), &mut nodes);
+
+        if nodes.is_empty() {
+            return None; 
+        }
+
+        let mid = nodes.len() / 2;
+        Some(nodes[mid].clone()) 
+
+    fn tree_rebalance(node: &BstNodeLink) -> BstNodeLink {
+        fn inorder_traversal(node: &Option<BstNodeLink>, nodes: &mut Vec<BstNodeLink>) {
+            if let Some(n) = node {
+                inorder_traversal(&n.borrow().left, nodes);
+                nodes.push(n.clone());
+                inorder_traversal(&n.borrow().right, nodes);
+            }
+        }
+
+        fn build_balanced_bst(nodes: &[BstNodeLink], start: usize, end: usize) -> Option<BstNodeLink> {
+            if start > end {
+                return None;
+            }
+            let mid = (start + end) / 2;
+            let root = nodes[mid].clone();
+
+            root.borrow_mut().left = build_balanced_bst(nodes, start, mid - 1);
+            if let Some(left) = &root.borrow().left {
+                left.borrow_mut().parent = Some(BstNode::downgrade(&root));
+            }
+
+            root.borrow_mut().right = build_balanced_bst(nodes, mid + 1, end);
+            if let Some(right) = &root.borrow().right {
+                right.borrow_mut().parent = Some(BstNode::downgrade(&root));
+            }
+
+            Some(root)
+        }
+
+        let mut nodes = Vec::new();
+        inorder_traversal(&Some(node.clone()), &mut nodes);
+
+        build_balanced_bst(&nodes, 0, nodes.len() - 1).unwrap()
+    }
+
     /**
      * As the name implied, used to upgrade parent node to strong nodelink
      */
@@ -353,3 +447,6 @@ impl BstNode {
         }
     }
 }
+
+
+
